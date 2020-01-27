@@ -162,9 +162,9 @@ if (!$istypesingle && !empty($forum->get_intro())) {
 
 // neo_uemanet
 // visualizacao da disponibilidade do forum quando o mesmo eh avaliativo
-if ($forum->assessed > 0 && $forum->assesstimestart > 0 && $forum->assesstimefinish) {
+if ($forum->get_rating_aggregate() > 0 && $forum->get_assess_time_start() > 0 && $forum->get_assess_time_finish()) {
     echo "<div style='text-align: center;' class='alert alert-info'>";
-    echo "Serão avaliadas apenas as participações compreendidas no período de:<br><b>" .userdate($forum->assesstimestart)."</b> até <b>".userdate($forum->assesstimefinish)."</b>.";
+    echo "Serão avaliadas apenas as participações compreendidas no período de:<br><b>" .userdate($forum->get_assess_time_start())."</b> até <b>".userdate($forum->get_assess_time_finish())."</b>.";
     echo "</div>";
 }
 
