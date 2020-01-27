@@ -715,6 +715,12 @@ class api {
             foreach ($members as $convid => $memberarr) {
                 foreach ($memberarr as $key => $memberid) {
                     if (array_key_exists($memberid, $memberinfo)) {
+                        // neo_uemanet
+                        // Resolve o bug das mensagens.
+                        if (!is_object($memberinfo[$memberid])) {
+                            continue;
+                        }
+
                         // If the user is deleted, remember that.
                         if ($memberinfo[$memberid]->isdeleted) {
                             $deletedmembers[$convid][] = $memberid;
