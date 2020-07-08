@@ -68,20 +68,24 @@
                     {{#parentauthorname}}
                         <span class="sr-only">{{#str}} inreplyto, mod_forum, {{.}} {{/str}}</span>
                     {{/parentauthorname}}
-                    <h3 {{!
-                        }}class="h6 font-weight-bold mb-0" {{!
-                        }}data-region-content="forum-post-core-subject" {{!
-                        }}data-reply-subject="{{replysubject}}" {{!
-                        }}>{{$subject}}{{{subject}}}{{/subject}}</h3>
+                    {{$subjectheading}}
+                        <h3 {{!
+                            }}class="h6 font-weight-bold mb-0" {{!
+                            }}data-region-content="forum-post-core-subject" {{!
+                            }}data-reply-subject="{{replysubject}}" {{!
+                            }}>{{$subject}}{{{subject}}}{{/subject}}</h3>
+                    {{/subjectheading}}
                     {{^isdeleted}}
-                        <address tabindex="-1">
+                        <div class="mb-3" tabindex="-1">
                             {{#html.authorsubheading}}{{{.}}}{{/html.authorsubheading}}
                             {{^html.authorsubheading}}
-                                <time>
-                                    {{#userdate}} {{timecreated}}, {{#str}} strftimedaydatetime, core_langconfig {{/str}} {{/userdate}}
-                                </time>
+                                {{< core/time_element }}
+                                    {{$elementid}}created-{{id}}-{{uniqid}}{{/elementid}}
+                                    {{$timestampval}}{{timecreated}}{{/timestampval}}
+                                    {{$userdateformatval}}{{#str}} strftimedaydatetime, core_langconfig {{/str}}{{/userdateformatval}}
+                                {{/core/time_element}}
                             {{/html.authorsubheading}}
-                        </address>
+                        </div>
                     {{/isdeleted}}
                     {{#isprivatereply}}
                         <div class="privatereplyinfo">

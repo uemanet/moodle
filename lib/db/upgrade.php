@@ -3788,9 +3788,6 @@ function xmldb_main_upgrade($oldversion) {
     // Put any upgrade step following this.
 
     if ($oldversion < 2019111800.04) {
-        // Delete any tool_cohortroles mappings for roles which no longer exist.
-        $DB->delete_records_select('tool_cohortroles', "roleid NOT IN (SELECT id FROM {role})");
-
         // Delete any role assignments for roles which no longer exist.
         $DB->delete_records_select('role_assignments', "roleid NOT IN (SELECT id FROM {role})");
 
@@ -3806,6 +3803,117 @@ function xmldb_main_upgrade($oldversion) {
         $DB->delete_records_select('event', $select);
 
         upgrade_main_savepoint(true, 2019111801.02);
+    }
+
+    if ($oldversion < 2019111801.05) {
+        global $DB;
+        // Delete any associated files.
+        $fs = get_file_storage();
+        $sql = "SELECT cuc.id, cuc.userid
+                  FROM {competency_usercomp} cuc
+             LEFT JOIN {user} u ON cuc.userid = u.id
+                 WHERE u.deleted = 1";
+        $usercompetencies = $DB->get_records_sql($sql);
+        foreach ($usercompetencies as $usercomp) {
+            $DB->delete_records('competency_evidence', ['usercompetencyid' => $usercomp->id]);
+            $DB->delete_records('competency_usercompcourse', ['userid' => $usercomp->userid]);
+            $DB->delete_records('competency_usercompplan', ['userid' => $usercomp->userid]);
+            $DB->delete_records('competency_usercomp', ['userid' => $usercomp->userid]);
+        }
+
+        $sql = "SELECT cue.id, cue.userid
+                  FROM {competency_userevidence} cue
+             LEFT JOIN {user} u ON cue.userid = u.id
+                 WHERE u.deleted = 1";
+        $userevidences = $DB->get_records_sql($sql);
+        foreach ($userevidences as $userevidence) {
+            $DB->delete_records('competency_userevidencecomp', ['userevidenceid' => $userevidence->id]);
+            $DB->delete_records('competency_userevidence', ['id' => $userevidence->id]);
+
+            $context = context_user::instance($userevidence->userid);
+            $fs->delete_area_files($context->id, 'core_competency', 'userevidence', $userevidence->id);
+        }
+
+        $sql = "SELECT cp.id
+                  FROM {competency_plan} cp
+             LEFT JOIN {user} u ON cp.userid = u.id
+                 WHERE u.deleted = 1";
+        $userplans = $DB->get_records_sql($sql);
+        foreach ($userplans as $userplan) {
+            $DB->delete_records('competency_plancomp', ['planid' => $userplan->id]);
+            $DB->delete_records('competency_plan', ['id' => $userplan->id]);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2019111801.05);
+    }
+
+    if ($oldversion < 2019111802.05) {
+        // Clean up completion criteria records referring to courses that no longer exist.
+        $select = 'criteriatype = :type AND courseinstance NOT IN (SELECT id FROM {course})';
+        $params = ['type' => 8]; // COMPLETION_CRITERIA_TYPE_COURSE.
+
+        $DB->delete_records_select('course_completion_criteria', $select, $params);
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2019111802.05);
+    }
+
+    if ($oldversion < 2019111802.08) {
+        // Upgrade h5p MIME type for existing h5p files.
+        $select = $DB->sql_like('filename', '?', false);
+        $DB->set_field_select(
+            'files',
+            'mimetype',
+            'application/zip.h5p',
+            $select,
+            array('%.h5p')
+        );
+
+        upgrade_main_savepoint(true, 2019111802.08);
+    }
+
+    if ($oldversion < 2019111803.14) {
+        // Update default digital age consent map according to the current legislation on each country.
+
+        // The default age of digital consent map for 38 and below.
+        $oldageofdigitalconsentmap = implode(PHP_EOL, [
+            '*, 16',
+            'AT, 14',
+            'ES, 14',
+            'US, 13'
+        ]);
+
+        // Check if the current age of digital consent map matches the old one.
+        if (get_config('moodle', 'agedigitalconsentmap') === $oldageofdigitalconsentmap) {
+            // If the site is still using the old defaults, upgrade to the new default.
+            $ageofdigitalconsentmap = implode(PHP_EOL, [
+                '*, 16',
+                'AT, 14',
+                'BE, 13',
+                'BG, 14',
+                'CY, 14',
+                'CZ, 15',
+                'DK, 13',
+                'EE, 13',
+                'ES, 14',
+                'FI, 13',
+                'FR, 15',
+                'GB, 13',
+                'GR, 15',
+                'IT, 14',
+                'LT, 14',
+                'LV, 13',
+                'MT, 13',
+                'NO, 13',
+                'PT, 13',
+                'SE, 13',
+                'US, 13'
+            ]);
+            set_config('agedigitalconsentmap', $ageofdigitalconsentmap);
+        }
+
+        upgrade_main_savepoint(true, 2019111803.14);
     }
 
     return true;

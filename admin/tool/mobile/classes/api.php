@@ -49,6 +49,8 @@ class api {
     const LOGIN_VIA_EMBEDDED_BROWSER = 3;
     /** @var int seconds an auto-login key will expire. */
     const LOGIN_KEY_TTL = 60;
+    /** @var string URL of the Moodle Apps Portal */
+    const MOODLE_APPS_PORTAL_URL = 'https://apps.moodle.com';
 
     /**
      * Returns a list of Moodle plugins supporting the mobile app.
@@ -357,6 +359,7 @@ class api {
      */
     public static function get_features_list() {
         global $CFG;
+        require_once($CFG->libdir . '/authlib.php');
 
         $general = new lang_string('general');
         $mainmenu = new lang_string('mainmenu', 'tool_mobile');
@@ -366,6 +369,7 @@ class api {
         $user = new lang_string('user');
         $files = new lang_string('files');
         $remoteaddons = new lang_string('remoteaddons', 'tool_mobile');
+        $identityproviders = new lang_string('oauth2identityproviders', 'tool_mobile');
 
         $availablemods = core_plugin_manager::instance()->get_plugins_of_type('mod');
         $coursemodules = array();
@@ -433,6 +437,8 @@ class api {
                 '$mmLoginEmailSignup' => new lang_string('startsignup'),
                 'NoDelegate_ForgottenPassword' => new lang_string('forgotten'),
                 'NoDelegate_ResponsiveMainMenuItems' => new lang_string('responsivemainmenuitems', 'tool_mobile'),
+                'NoDelegate_H5POffline' => new lang_string('h5poffline', 'tool_mobile'),
+                'NoDelegate_DarkMode' => new lang_string('darkmode', 'tool_mobile'),
             ),
             "$mainmenu" => array(
                 '$mmSideMenuDelegate_mmaFrontpage' => new lang_string('sitehome'),
@@ -483,6 +489,31 @@ class api {
 
         if (!empty($remoteaddonslist)) {
             $features["$remoteaddons"] = $remoteaddonslist;
+        }
+
+        // Display OAuth 2 identity providers.
+        if (is_enabled_auth('oauth2')) {
+            $identityproviderslist = array();
+            $idps = \auth_plugin_base::get_identity_providers(['oauth2']);
+
+            foreach ($idps as $idp) {
+                // Only add identity providers that have an ID.
+                $id = isset($idp['url']) ? $idp['url']->get_param('id') : null;
+                if ($id != null) {
+                    $identityproviderslist['NoDelegate_IdentityProvider_' . $id] = $idp['name'];
+                }
+            }
+
+            if (!empty($identityproviderslist)) {
+                $features["$identityproviders"] = array();
+
+                if (count($identityproviderslist) > 1) {
+                    // Include an option to disable them all.
+                    $features["$identityproviders"]['NoDelegate_IdentityProviders'] = new lang_string('all');
+                }
+
+                $features["$identityproviders"] = array_merge($features["$identityproviders"], $identityproviderslist);
+            }
         }
 
         return $features;

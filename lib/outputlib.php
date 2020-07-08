@@ -179,12 +179,13 @@ function theme_get_css_filename($themename, $globalrevision, $themerevision, $di
  * @param theme_config[] $themeconfigs An array of theme_config instances.
  * @param array          $directions   Must be a subset of ['rtl', 'ltr'].
  * @param bool           $cache        Should the generated files be stored in local cache.
+ * @return array         The built theme content in a multi-dimensional array of name => direction => content
  */
-function theme_build_css_for_themes($themeconfigs = [], $directions = ['rtl', 'ltr'], $cache = true) {
+function theme_build_css_for_themes($themeconfigs = [], $directions = ['rtl', 'ltr'], $cache = true): array {
     global $CFG;
 
     if (empty($themeconfigs)) {
-        return;
+        return [];
     }
 
     require_once("{$CFG->libdir}/csslib.php");
@@ -212,7 +213,7 @@ function theme_build_css_for_themes($themeconfigs = [], $directions = ['rtl', 'l
                 css_store_css($themeconfig, $filename, $themecss[$direction]);
             }
         }
-        $themescss[] = $themecss;
+        $themescss[$themeconfig->name] = $themecss;
 
         if ($cache) {
             // Only update the theme revision after we've successfully created the
@@ -961,12 +962,31 @@ class theme_config {
      */
     public function editor_scss_to_css() {
         $css = '';
+        $dir = $this->dir;
+        $filenames = [];
 
+        // Use editor_scss file(s) provided by this theme if set.
         if (!empty($this->editor_scss)) {
+            $filenames = $this->editor_scss;
+        } else {
+            // If no editor_scss set, move up theme hierarchy until one is found (if at all).
+            // This is so child themes only need to set editor_scss if an override is required.
+            foreach (array_reverse($this->parent_configs) as $parentconfig) {
+                if (!empty($parentconfig->editor_scss)) {
+                    $dir = $parentconfig->dir;
+                    $filenames = $parentconfig->editor_scss;
+
+                    // Config found, stop looking.
+                    break;
+                }
+            }
+        }
+
+        if (!empty($filenames)) {
             $compiler = new core_scss();
 
-            foreach ($this->editor_scss as $filename) {
-                $compiler->set_file("{$this->dir}/scss/{$filename}.scss");
+            foreach ($filenames as $filename) {
+                $compiler->set_file("{$dir}/scss/{$filename}.scss");
 
                 try {
                     $css .= $compiler->to_css();

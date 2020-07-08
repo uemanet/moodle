@@ -64,11 +64,6 @@ use Behat\Testwork\Hook\Scope\BeforeSuiteScope,
 class behat_hooks extends behat_base {
 
     /**
-     * @var Last browser session start time.
-     */
-    protected static $lastbrowsersessionstart = 0;
-
-    /**
      * @var For actions that should only run once.
      */
     protected static $initprocessesfinished = false;
@@ -196,12 +191,6 @@ class behat_hooks extends behat_base {
         // Avoid parallel tests execution, it continues when the previous lock is released.
         test_lock::acquire('behat');
 
-        // Store the browser reset time if reset after N seconds is specified in config.php.
-        if (!empty($CFG->behat_restart_browser_after)) {
-            // Store the initial browser session opening.
-            self::$lastbrowsersessionstart = time();
-        }
-
         if (!empty($CFG->behat_faildump_path) && !is_writable($CFG->behat_faildump_path)) {
             throw new behat_stop_exception('You set $CFG->behat_faildump_path to a non-writable directory');
         }
@@ -307,6 +296,9 @@ class behat_hooks extends behat_base {
         $driverexceptionmsg = 'Selenium server is not running, you need to start it to run tests that involve Javascript. ' . $moreinfo;
         try {
             $session = $this->getSession();
+            if (!$session->isStarted()) {
+                $session->start();
+            }
         } catch (CurlExec $e) {
             // Exception thrown by WebDriver, so only @javascript tests will be caugth; in
             // behat_util::check_server_status() we already checked that the server is running.
@@ -364,18 +356,19 @@ class behat_hooks extends behat_base {
         behat_util::reset_all_data();
         error_reporting($errorlevel);
 
+        if ($this->running_javascript()) {
+            // Fetch the user agent.
+            // This isused to choose between the SVG/Non-SVG versions of themes.
+            $useragent = $this->getSession()->evaluateScript('return navigator.userAgent;');
+            \core_useragent::instance(true, $useragent);
+
+            // Restore the saved themes.
+            behat_util::restore_saved_themes();
+        }
+
         // Assign valid data to admin user (some generator-related code needs a valid user).
         $user = $DB->get_record('user', array('username' => 'admin'));
         \core\session\manager::set_user($user);
-
-        // Reset the browser if specified in config.php.
-        if (!empty($CFG->behat_restart_browser_after) && $this->running_javascript()) {
-            $now = time();
-            if (self::$lastbrowsersessionstart + $CFG->behat_restart_browser_after < $now) {
-                $session->restart();
-                self::$lastbrowsersessionstart = $now;
-            }
-        }
 
         // Set the theme if not default.
         if ($suitename !== "default") {
@@ -385,16 +378,18 @@ class behat_hooks extends behat_base {
         // Reset the scenariorunning variable to ensure that Step 0 occurs.
         $this->scenariorunning = false;
 
-        // Run all test with medium (1024x768) screen size, to avoid responsive problems.
-        $this->resize_window('medium');
-
         // Set up the tags for current scenario.
         self::fetch_tags_for_scenario($scope);
 
         // If scenario requires the Moodle app to be running, set this up.
         if ($this->has_tag('app')) {
             $this->execute('behat_app::start_scenario');
+
+            return;
         }
+
+        // Run all test with medium (1024x768) screen size, to avoid responsive problems.
+        $this->resize_window('medium');
     }
 
     /**
@@ -561,25 +556,13 @@ class behat_hooks extends behat_base {
     }
 
     /**
-     * Executed after scenario having switch window to restart session.
-     * This is needed to close all extra browser windows and starting
-     * one browser window.
+     * Reset the session between each scenario.
      *
      * @param AfterScenarioScope $scope scope passed by event fired after scenario.
-     * @AfterScenario @_switch_window
+     * @AfterScenario
      */
-    public function after_scenario_switchwindow(AfterScenarioScope $scope) {
-        for ($count = 0; $count < behat_base::get_extended_timeout(); $count++) {
-            try {
-                $this->getSession()->restart();
-                break;
-            } catch (DriverException $e) {
-                // Wait for timeout and try again.
-                sleep(self::get_timeout());
-            }
-        }
-        // If session is not restarted above then it will try to start session before next scenario
-        // and if that fails then exception will be thrown.
+    public function reset_webdriver_between_scenarios(AfterScenarioScope $scope) {
+        $this->getSession()->stop();
     }
 
     /**
@@ -721,20 +704,12 @@ class behat_hooks extends behat_base {
      * @param string $component
      */
     public function register_component_selectors_for_component(string $component): void {
-        $componentclassname = "behat_{$component}";
+        $context = behat_context_helper::get_component_context($component);
 
-        if (!behat_context_helper::has_context($componentclassname)) {
-            if ("core_" === substr($component, 0, 5)) {
-                $componentclassname = "behat_" . substr($component, 5);
-                if (!behat_context_helper::has_context($componentclassname)) {
-                    return;
-                }
-            } else {
-                return;
-            }
+        if ($context === null) {
+            return;
         }
 
-        $context = behat_context_helper::get($componentclassname);
         $namedpartial = $this->getSession()->getSelectorsHandler()->getSelector('named_partial');
         $namedexact = $this->getSession()->getSelectorsHandler()->getSelector('named_exact');
 

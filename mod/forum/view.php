@@ -108,7 +108,7 @@ $PAGE->set_heading($course->fullname);
 $PAGE->set_button(forum_search_form($course, $search));
 
 if ($istypesingle && $displaymode == FORUM_MODE_NESTED_V2) {
-    $PAGE->add_body_class('reset-style');
+    $PAGE->add_body_class('nested-v2-display-mode reset-style');
     $settingstrigger = $OUTPUT->render_from_template('mod_forum/settings_drawer_trigger', null);
     $PAGE->add_header_action($settingstrigger);
 }
@@ -212,7 +212,7 @@ switch ($forum->get_type()) {
                     'gradingcomponent' => $forumgradeitem->get_grading_component_name(),
                     'gradingcomponentsubtype' => $forumgradeitem->get_grading_component_subtype(),
                 ];
-                $OUTPUT->render_from_template('mod_forum/grades/view_grade_button', $gradeobj);
+                echo $OUTPUT->render_from_template('mod_forum/grades/view_grade_button', $gradeobj);
             }
         }
         $discussion = $discussionvault->get_last_discussion_in_forum($forum);

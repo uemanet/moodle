@@ -357,7 +357,7 @@ class renderer_base {
      * @param int $maxheight The maximum height, or null when the maximum height does not matter.
      * @return moodle_url|false
      */
-    public function get_compact_logo_url($maxwidth = 100, $maxheight = 100) {
+    public function get_compact_logo_url($maxwidth = 300, $maxheight = 300) {
         global $CFG;
         $logo = get_config('core_admin', 'logocompact');
         if (empty($logo)) {
@@ -1745,7 +1745,7 @@ class core_renderer extends renderer_base {
         $id = !empty($bc->attributes['id']) ? $bc->attributes['id'] : uniqid('block-');
         $context = new stdClass();
         $context->skipid = $bc->skipid;
-        $context->blockinstanceid = $bc->blockinstanceid;
+        $context->blockinstanceid = $bc->blockinstanceid ?: uniqid('fakeid-');
         $context->dockable = $bc->dockable;
         $context->id = $id;
         $context->hidden = $bc->collapsible == block_contents::HIDDEN;
@@ -2526,7 +2526,6 @@ class core_renderer extends renderer_base {
 
         $attributes = array('src' => $src, 'class' => $class, 'width' => $size, 'height' => $size);
         if (!$userpicture->visibletoscreenreaders) {
-            $attributes['role'] = 'presentation';
             $alt = '';
             $attributes['aria-hidden'] = 'true';
         }
@@ -3217,7 +3216,7 @@ EOD;
             'size' => 13, 'tabindex' => -1, 'id' => 'id_q_' . $id, 'class' => 'form-control');
 
         $contents = html_writer::tag('label', get_string('enteryoursearchquery', 'search'),
-            array('for' => 'id_q_' . $id, 'class' => 'accesshide')) . html_writer::tag('input', '', $inputattrs);
+            array('for' => 'id_q_' . $id, 'class' => 'accesshide')) . html_writer::empty_tag('input', $inputattrs);
         if ($this->page->context && $this->page->context->contextlevel !== CONTEXT_SYSTEM) {
             $contents .= html_writer::empty_tag('input', ['type' => 'hidden',
                     'name' => 'context', 'value' => $this->page->context->id]);

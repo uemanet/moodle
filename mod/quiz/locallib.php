@@ -1423,9 +1423,9 @@ function quiz_attempt_state($quiz, $attempt) {
  * The the appropraite mod_quiz_display_options object for this attempt at this
  * quiz right now.
  *
- * @param object $quiz the quiz instance.
- * @param object $attempt the attempt in question.
- * @param $context the quiz context.
+ * @param stdClass $quiz the quiz instance.
+ * @param stdClass $attempt the attempt in question.
+ * @param context $context the quiz context.
  *
  * @return mod_quiz_display_options
  */
@@ -2152,13 +2152,13 @@ function quiz_add_quiz_question($questionid, $quiz, $page = 0, $maxmark = null) 
         );
     }
 
+    $trans = $DB->start_delegated_transaction();
     $slots = $DB->get_records('quiz_slots', array('quizid' => $quiz->id),
             'slot', 'questionid, slot, page, id');
     if (array_key_exists($questionid, $slots)) {
+        $trans->allow_commit();
         return false;
     }
-
-    $trans = $DB->start_delegated_transaction();
 
     $maxpage = 1;
     $numonlastpage = 0;
@@ -2522,13 +2522,13 @@ function quiz_is_overriden_calendar_event(\calendar_event $event) {
  * has one tag, and the third has zero tags. The return structure will look like:
  * [
  *      1 => [
- *          { ...tag data... },
- *          { ...tag data... },
+ *          quiz_slot_tags.id => { ...tag data... },
+ *          quiz_slot_tags.id => { ...tag data... },
  *      ],
  *      2 => [
- *          { ...tag data... }
+ *          quiz_slot_tags.id => { ...tag data... },
  *      ],
- *      3 => []
+ *      3 => [],
  * ]
  *
  * @param int[] $slotids The list of id for the quiz slots.
@@ -2580,7 +2580,7 @@ function quiz_retrieve_tags_for_slot_ids($slotids) {
                 }
             }
 
-            $carry[$slottag->slotid][] = $slottag;
+            $carry[$slottag->slotid][$slottag->id] = $slottag;
             return $carry;
         },
         $emptytagids
