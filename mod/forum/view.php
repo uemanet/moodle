@@ -160,6 +160,13 @@ if (!$istypesingle && !empty($forum->get_intro())) {
     echo $OUTPUT->box(format_module_intro('forum', $forumrecord, $cm->id), 'generalbox', 'intro');
 }
 
+// visualizacao da disponibilidade do forum quando o mesmo eh avaliativo
+if ($forum->get_rating_aggregate() > 0 && $forum->get_assess_time_start() > 0 && $forum->get_assess_time_finish()) {
+    echo "<div style='text-align: center;' class='alert alert-info'>";
+    echo "Serão avaliadas apenas as participações compreendidas no período de:<br><b>" .userdate($forum->get_assess_time_start())."</b> até <b>".userdate($forum->get_assess_time_finish())."</b>.";
+    echo "</div>";
+}
+
 if ($sortorder) {
     set_user_preference('forum_discussionlistsortorder', $sortorder);
 }
