@@ -46,6 +46,7 @@ function core_myprofile_navigation(core_user\output\myprofile\tree $tree, $user,
     $contactcategory = new core_user\output\myprofile\category('contact', get_string('userdetails'));
     // No after property specified intentionally. It is a hack to make administration block appear towards the end. Refer MDL-49928.
     $coursedetailscategory = new core_user\output\myprofile\category('coursedetails', get_string('coursedetails'));
+    $userdisciplines = new core_user\output\myprofile\category('userdisciplines', 'Disciplinas matriculadas');
     $miscategory = new core_user\output\myprofile\category('miscellaneous', get_string('miscellaneous'), 'coursedetails');
     $reportcategory = new core_user\output\myprofile\category('reports', get_string('reports'), 'miscellaneous');
     $admincategory = new core_user\output\myprofile\category('administration', get_string('administration'), 'reports');
@@ -54,6 +55,7 @@ function core_myprofile_navigation(core_user\output\myprofile\tree $tree, $user,
     // Add categories.
     $tree->add_category($contactcategory);
     $tree->add_category($coursedetailscategory);
+    $tree->add_category($userdisciplines);
     $tree->add_category($miscategory);
     $tree->add_category($reportcategory);
     $tree->add_category($admincategory);
@@ -328,6 +330,25 @@ function core_myprofile_navigation(core_user\output\myprofile\tree $tree, $user,
                 $tree->add_node($node);
             }
         }
+    }
+
+    // Exibe as disciplinas matriculados do aluno.
+    $query = "SELECT cs.id, cs.name
+              FROM {int_user_discipline} ud
+              INNER join {course_sections} cs on ud.sectionid = cs.id
+              WHERE cs.course = ?
+              AND ud.userid = ?";
+
+    $disciplines = $DB->get_records_sql($query, [$course->id, $user->id]);
+    if ($disciplines) {
+        $content = '';
+
+        foreach ($disciplines as $discipline) {
+            $content .= $discipline->name . '<br>';
+        }
+
+        $node = new \core_user\output\myprofile\node('userdisciplines', 'discipline-'.$discipline->id, '', null, null, $content);
+        $tree->add_node($node);
     }
 
     $categories = profile_get_user_fields_with_data_by_category($user->id);
