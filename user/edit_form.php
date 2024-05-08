@@ -104,6 +104,14 @@ class user_edit_form extends moodleform {
         // Next the customisable profile fields.
         profile_definition($mform, $userid);
 
+        // Desabilita os campos do perfil do usuario.
+        $mform->disabledIf('firstname', '');
+        $mform->disabledIf('lastname', '');
+        $mform->disabledIf('email', '');
+        $mform->disabledIf('city', '');
+        $mform->disabledIf('country', '');
+        $mform->disabledIf('timezone', '');
+
         $this->add_action_buttons(true, get_string('updatemyprofile'));
 
         $this->set_data($user);
@@ -124,6 +132,14 @@ class user_edit_form extends moodleform {
         }
 
         if ($user = $DB->get_record('user', array('id' => $userid))) {
+
+            // Desabilita os campos do perfil do usuario.
+            $mform->_submitValues['firstname'] = $user->firstname;
+            $mform->_submitValues['lastname'] = $user->lastname;
+            $mform->_submitValues['email'] = $user->email;
+            $mform->_submitValues['city'] = $user->city;
+            $mform->_submitValues['country'] = $user->country;
+            $mform->_submitValues['timezone'] = $user->timezone;
 
             // Remove description.
             if (empty($user->description) && !empty($CFG->profilesforenrolledusersonly) && !$DB->record_exists('role_assignments', array('userid' => $userid))) {
