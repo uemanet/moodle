@@ -113,6 +113,7 @@ class EvalMath {
     var $fc = array( // calc functions emulation
         'average'=>array(-1), 'max'=>array(-1),  'min'=>array(-1),
         'mod'=>array(2),      'pi'=>array(0),    'power'=>array(2),
+        'round'=>array(1, 2), 'sum'=>array(-1), 'rand_int'=>array(2), 'calcstatus'=>array(5),
         'round'=>array(1, 2), 'sum'=>array(-1), 'rand_int'=>array(2),
         'rand_float'=>array(0), 'ifthenelse'=>array(3), 'cond_and'=>array(-1), 'cond_or'=>array(-1));
     var $fcsynonyms = array('if' => 'ifthenelse', 'and' => 'cond_and', 'or' => 'cond_or');
@@ -607,6 +608,28 @@ class EvalMathFuncs {
            $res += $a;
         }
         return $res;
+    }
+
+    // Calcular status no moodle.
+    static function calcstatus($media, $escM, $final, $escF, $param) {
+        $media = (($media - 1) * $escM);
+        $final = (($final - 1) * $escF);
+        if ($media >= 7) {
+            ($param == 1 ? $retorno = 1 : $retorno = $media);
+        } else if ($media >=3) {
+            if ($final >= 0) {
+                if (($media + $final) >= 10) {
+                    ($param == 1 ? $retorno = 2 : $retorno = (($media + $final) / 2) );
+                } else {
+                    ($param == 1 ? $retorno = 4 : $retorno = (($media + $final) / 2) );
+                }
+            } else {
+                ($param == 1 ? $retorno = 3 : $retorno = $media);
+            }
+        } else {
+            ( $param == 1 ? $retorno = 3 : $retorno = $media);
+        }
+        return $retorno;
     }
 
     protected static $randomseed = null;
