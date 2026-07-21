@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-use core\di;
+use core\{clock, di};
 use core\hook;
 use core_course\external\course_summary_exporter;
 use core_courseformat\base as course_format;
@@ -1654,6 +1654,10 @@ function course_allowed_module($course, $modname, ?\stdClass $user = null) {
                 supports numeric module ids. Please update your code to pass the module name.');
     }
 
+    if (!\core\plugininfo\mod::get_enabled_plugin($modname)) {
+        return false;
+    }
+
     $capability = 'mod/' . $modname . ':addinstance';
     if (!get_capability_info($capability)) {
         // Debug warning that the capability does not exist, but no more than once per page.
@@ -2624,6 +2628,7 @@ class course_request {
         $data->newsitems          = $courseconfig->newsitems;
         $data->showgrades         = $courseconfig->showgrades;
         $data->showreports        = $courseconfig->showreports;
+        $data->showactivitydates  = $courseconfig->showactivitydates;
         $data->maxbytes           = $courseconfig->maxbytes;
         $data->groupmode          = $courseconfig->groupmode;
         $data->groupmodeforce     = $courseconfig->groupmodeforce;
@@ -2632,9 +2637,9 @@ class course_request {
         $data->lang               = $courseconfig->lang;
         $data->enablecompletion   = $courseconfig->enablecompletion;
         $data->numsections        = $courseconfig->numsections;
-        $data->startdate          = usergetmidnight(time());
+        $data->startdate          = usergetmidnight(di::get(clock::class)->time());
         if ($courseconfig->courseenddateenabled) {
-            $data->enddate        = usergetmidnight(time()) + $courseconfig->courseduration;
+            $data->enddate        = $data->startdate + $courseconfig->courseduration;
         }
 
         list($data->fullname, $data->shortname) = restore_dbops::calculate_course_names(0, $data->fullname, $data->shortname);
@@ -2993,7 +2998,7 @@ function get_sorted_course_formats($enabledonly = false) {
  * @param array $options options for view URL. At the moment core uses:
  *     'navigation' (bool) if true and section has no separate page, the function returns null
  *     'sr' (int) used by multipage formats to specify to which section to return
- * @return moodle_url The url of course
+ * @return moodle_url|null The url of course
  */
 function course_get_url($courseorid, $section = null, $options = array()) {
     return course_get_format($courseorid)->get_view_url($section, $options);

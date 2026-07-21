@@ -34,13 +34,12 @@ Feature: Do a H5P attempt
   Scenario: Do an attempt and check on course log report
     When I am on the "Awesome H5P package" "h5pactivity activity" page logged in as student1
     And I should not see "You are in preview mode."
-    And I switch to "h5p-player" class iframe
-    And I switch to "h5p-iframe" class iframe
+    And I wait until "h5p-player" iframe is interactable and switch to it
+    And I wait until "h5p-iframe" iframe is interactable and switch to it
     And I click on "Correct one" "text" in the ".h5p-question-content" "css_element"
     And I click on "Check" "button" in the ".h5p-question-buttons" "css_element"
     And I switch to the main frame
-    And I am on the "Course 1" course page logged in as teacher1
-    And I navigate to course participants
+    And I am on the "Course 1" "enrolled users" page logged in as teacher1
     And I follow "Student 1"
     Then I follow "Today's logs"
     And I should see "xAPI statement received"
@@ -49,8 +48,8 @@ Feature: Do a H5P attempt
   Scenario: Do various attempts and check them with the attempts and user grades reports
     Given I am on the "Awesome H5P package" "h5pactivity activity" page logged in as student1
     And I should not see "You are in preview mode."
-    And I switch to "h5p-player" class iframe
-    And I switch to "h5p-iframe" class iframe
+    And I wait until "h5p-player" iframe is interactable and switch to it
+    And I wait until "h5p-iframe" iframe is interactable and switch to it
     And I click on "Wrong one" "text" in the ".h5p-question-content" "css_element"
     And I click on "Check" "button" in the ".h5p-question-buttons" "css_element"
     And I click on "Retry" "button" in the ".h5p-question-buttons" "css_element"
@@ -62,8 +61,8 @@ Feature: Do a H5P attempt
     # H5P does not allow to Retry if the user checks the correct answer, we need to refresh the page.
     And I switch to the main frame
     And I reload the page
-    And I switch to "h5p-player" class iframe
-    And I switch to "h5p-iframe" class iframe
+    And I wait until "h5p-player" iframe is interactable and switch to it
+    And I wait until "h5p-iframe" iframe is interactable and switch to it
     # Because of the steps above, the 2nd and 3rd attempts are enough "separated" and we don't
     # need to add any wait here.
     And I click on "Wrong one" "text" in the ".h5p-question-content" "css_element"

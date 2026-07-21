@@ -547,8 +547,7 @@ class component {
         // Always keep moodle_exception in place.
         $keyclasses = [
             \core\exception\moodle_exception::class,
-            \core\output\bootstrap_renderer::class,
-            \core_cache\cache::class,
+            \core\router\middleware\api_validation_middleware::class,
         ];
         foreach ($keyclasses as $classname) {
             if (!array_key_exists($classname, $cache['classmap'])) {
@@ -1366,6 +1365,7 @@ $cache = ' . var_export($cache, true) . ';
     public static function get_plugin_list_with_file($plugintype, $file, $include = false) {
         global $CFG; // Necessary in case it is referenced by included PHP scripts.
         $pluginfiles = [];
+        self::init();
 
         if (isset(self::$filemap[$file])) {
             // If the file was supposed to be mapped, then it should have been set in the array.
@@ -1407,6 +1407,7 @@ $cache = ' . var_export($cache, true) . ';
     public static function get_component_classes_in_namespace($component = null, $namespace = '') {
 
         $classes = [];
+        self::init();
 
         // Only look for components if a component name is set or a namespace is set.
         if (isset($component) || !empty($namespace)) {
@@ -1815,6 +1816,7 @@ $cache = ' . var_export($cache, true) . ';
      * @return bool true if core subsystem.
      */
     public static function is_core_subsystem($subsystemname) {
+        self::init();
         return isset(self::$subsystems[$subsystemname]);
     }
 
@@ -1825,6 +1827,7 @@ $cache = ' . var_export($cache, true) . ';
      * @return bool true if core API.
      */
     public static function is_core_api($apiname) {
+        self::init();
         return isset(self::$apis[$apiname]);
     }
 

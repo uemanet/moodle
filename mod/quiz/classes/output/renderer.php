@@ -534,6 +534,10 @@ class renderer extends plugin_renderer_base {
      */
     public function during_attempt_tertiary_nav($quizviewurl): string {
         $output = '';
+        if ($this->page->pagelayout === 'secure') {
+            // Do not show the back button in the secure layout on quiz pages.
+            return $output;
+        }
         $output .= html_writer::start_div('tertiary-navigation');
         $output .= html_writer::start_div('row');
         $output .= html_writer::start_div('navitem');
@@ -756,7 +760,7 @@ class renderer extends plugin_renderer_base {
     public function summary_table($attemptobj, $displayoptions) {
         // Prepare the summary table header.
         $table = new html_table();
-        $table->attributes['class'] = 'generaltable quizsummaryofattempt boxaligncenter';
+        $table->attributes['class'] = 'generaltable quizsummaryofattempt boxaligncenter table table-striped table-hover';
         $table->head = [get_string('question', 'quiz'), get_string('status', 'quiz')];
         $table->align = ['left', 'left'];
         $table->size = ['', ''];
@@ -1141,7 +1145,7 @@ class renderer extends plugin_renderer_base {
 
         // Prepare table header.
         $table = new html_table();
-        $table->attributes['class'] = 'generaltable quizattemptsummary';
+        $table->attributes['class'] = 'generaltable table-striped quizattemptsummary table-hover';
         $table->caption = get_string('summaryofattempts', 'quiz');
         $table->captionhide = true;
         $table->head = [];

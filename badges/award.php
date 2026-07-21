@@ -82,6 +82,16 @@ if (!$badge->is_active()) {
     die();
 }
 
+if (!empty($role)) {
+    if (!user_has_role_assignment($USER->id, $role, $context->id) && !$isadmin) {
+        // User does not have the role passed by the parameter.
+        echo $OUTPUT->header();
+        echo $OUTPUT->notification(get_string('wrongrole', 'badges'));
+        echo $OUTPUT->footer();
+        die();
+    }
+}
+
 $returnurl = new moodle_url('recipients.php', array('id' => $badge->id));
 $returnlink = html_writer::link($returnurl, $strrecipients);
 $actionbar = new \core_badges\output\standard_action_bar(
@@ -207,7 +217,7 @@ if ($award && data_submitted() && has_capability('moodle/badges:awardbadge', $co
     $users = $existingselector->get_selected_users();
 
     foreach ($users as $user) {
-        if (!process_manual_revoke($user->id, $USER->id, $issuerrole->roleid, $badgeid)) {
+        if (!process_manual_revoke($user->id, 0, $issuerrole->roleid, $badgeid)) {
             echo $OUTPUT->error_text(get_string('error:cannotrevokebadge', 'badges'));
         }
     }

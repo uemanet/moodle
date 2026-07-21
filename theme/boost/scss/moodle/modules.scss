@@ -85,6 +85,12 @@ select {
     }
 }
 
+.path-mod-choice {
+    .responseaction select.singleselect {
+        display: inline-block;
+    }
+}
+
 // Forum module
 
 .path-mod-forum .forumsearch {
@@ -1548,9 +1554,6 @@ $popout-header-height: 4rem;
 .path-mod-feedback {
     span.feedback_info {
         font-weight: bold;
-    }
-    div.feedback_is_dependent {
-        background: $gray-600;
     }
     span.feedback_depend {
         color: $danger;

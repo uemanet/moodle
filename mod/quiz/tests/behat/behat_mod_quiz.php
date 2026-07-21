@@ -565,7 +565,7 @@ class behat_mod_quiz extends behat_question_base {
      */
     protected function get_xpath_page_break_icon_after_question($addorremoves, $questionname) {
         return "//li[contains(@class, 'slot') and contains(., '" . $this->escape($questionname) .
-                "')]//a[contains(@class, 'page_split_join') and @title = '" . $addorremoves . " page break']";
+                "')]//a[contains(@class, 'page_split_join') and contains(@aria-label, '$addorremoves page break')]";
     }
 
     /**
@@ -717,8 +717,11 @@ class behat_mod_quiz extends behat_question_base {
 
         $this->execute("behat_general::i_click_on", [$slotxpath . $deletexpath, "xpath_element"]);
 
+        // Wait for the dialogue to exist before clicking on the 'Yes' button to avoid random failures.
+        $this->execute('behat_general::wait_until_exists', [".modal-content", "css_element"]);
+
         $this->execute('behat_general::i_click_on_in_the',
-            ['Yes', "button", "Confirm", "dialogue"]
+            ["Yes", "button", "Confirm", "dialogue"]
         );
     }
 

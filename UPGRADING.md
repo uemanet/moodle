@@ -6,7 +6,166 @@ More detailed information on key changes can be found in the [Developer update n
 
 The format of this change log follows the advice given at [Keep a CHANGELOG](https://keepachangelog.com).
 
-## 5.0.3+
+## 5.0.7
+
+### core
+
+#### Added
+
+- "grunt watch" now accepts a force flag. Run "grunt watch -f" or "grunt watch --force" to prevent grunt from cancelling builds when errors occur. This is especially useful during development, because js build files will be built even if, for example, jslint errors are still present in the files.
+
+  For more information see [MDL-86839](https://tracker.moodle.org/browse/MDL-86839)
+- When creating upgrade notes, the issue number will be inferred from the current Git branch name by default
+
+  For more information see [MDL-87100](https://tracker.moodle.org/browse/MDL-87100)
+- There is a new Behat `toast_message` named selector to more easily assert the presence of Toast messages on the page
+
+  For more information see [MDL-87443](https://tracker.moodle.org/browse/MDL-87443)
+- The `core/toast` JS module now accepts a `visuallyHidden` configuration parameter to render visually hidden toast messages for screen reader users.
+
+  For more information see [MDL-87993](https://tracker.moodle.org/browse/MDL-87993)
+
+### core_files
+
+#### Added
+
+- A new method called `removeopt()` has been created in the `curl` class to allow users to remove options previously set with `setopt()`.
+
+  For more information see [MDL-87822](https://tracker.moodle.org/browse/MDL-87822)
+- User can pass `'CURLOPT_USERPWD' => false` to the `$options` array for the `put()` method of `curl` to remove the `CURLOPT_USERPWD` option from the request.
+
+  For more information see [MDL-87822](https://tracker.moodle.org/browse/MDL-87822)
+
+### core_question
+
+#### Added
+
+- During restore of a question_set_reference, mapping of IDs in the filtercondition is now delegated to qbank plugins. If your qbank plugin defines a filter condition that uses database IDs, add an override of `restore_filtercondition()` to the `condition` class, which checks the condition's data and replaces the IDs with mapped values if required. See  `qbank_managecategories\category_condition` for an example.
+
+  For more information see [MDL-86524](https://tracker.moodle.org/browse/MDL-86524)
+
+### core_user
+
+#### Added
+
+- Added new optional parameter `userid` to the `user_remove_user_device` function.
+
+  For more information see [MDL-87795](https://tracker.moodle.org/browse/MDL-87795)
+
+### aiprovider_openai
+
+#### Added
+
+- A new `aiprovider_openai\aimodel\openai_image_base` interface has been added. Image generation model classes must now implement this interface to declare their `response_format`, `output_format`, size, and quality mappings. Existing custom model classes that handle image generation should implement this interface to ensure correct API parameters are sent.
+
+  For more information see [MDL-85352](https://tracker.moodle.org/browse/MDL-85352)
+- A new `gptimage1` model class has been added to support gpt-image-1.5.
+  This model uses `output_format=png` instead of `response_format`, and maps Moodle quality values to the values expected by the API: 'standard' maps to 'medium' and 'hd' maps to 'high'.
+
+  For more information see [MDL-85352](https://tracker.moodle.org/browse/MDL-85352)
+
+#### Changed
+
+- The `dalle3` model class now implements `openai_image_base` and switches from returning a URL to returning `response_format=b64_json`.
+  The image is now decoded directly from the API response instead of being downloaded via a second HTTP request. Size and quality logic has been moved into the model class.
+
+  For more information see [MDL-85352](https://tracker.moodle.org/browse/MDL-85352)
+
+### auth_db
+
+#### Deprecated
+
+- The `ext_addslashes()` method has been deprecated from `auth_plugin_db`, because external database queries now use parameterized statements instead. As a result, the `sybasequoting` setting has also been removed, since it was only ever used by that method.
+
+  For more information see [MDL-88138](https://tracker.moodle.org/browse/MDL-88138)
+
+### block_html
+
+#### Changed
+
+- Treat Dashboard (pagetype 'my-index') as trusted in web services so get_content_for_external preserves embedded HTML (e.g. iframes) on user Dashboard.
+
+  For more information see [MDL-85322](https://tracker.moodle.org/browse/MDL-85322)
+
+### enrol_manual
+
+#### Removed
+
+- The unused parameter 'roleid' has been removed from the external function `unenrol_users()`
+
+  For more information see [MDL-51152](https://tracker.moodle.org/browse/MDL-51152)
+
+### tool_behat
+
+#### Added
+
+- The `behat_session_trait::ensure_element_[does_not_]exists(...)` methods now accept optional `$container` parameter to define the parent node to look within
+
+  For more information see [MDL-75067](https://tracker.moodle.org/browse/MDL-75067)
+
+## 5.0.5
+
+### core
+
+#### Changed
+
+- `\core\output\core_renderer::confirm()`'s `$displayoptions` parameter now also accepts a `headinglevel` option that developers can use to specify the heading level of the confirmation's heading. If not specified, the confirmation heading will be rendered in an `h4` tag.
+
+  For more information see [MDL-87694](https://tracker.moodle.org/browse/MDL-87694)
+
+### core_question
+
+#### Fixed
+
+- In order to prevent re-use of question version numbers after a version is deleted, the `nextversion` column was added to `question_bank_entries`. This serves as a counter incremented each time a version is created.
+  Do not query this field directly. Instead use `core_question\versions::get_next_version()` to read the value, which will initialise it based on the existing versions if it is not set yet. By default, it will increment the version number automatically, unless you pass `increment: false`. Because of this, it is advisable to call it inside a transaction, that is only committed after the version number is used in a `question_versions` record.
+
+  For more information see [MDL-86798](https://tracker.moodle.org/browse/MDL-86798)
+
+## 5.0.4
+
+### core
+
+#### Added
+
+- Added clean_string() that prevents double escaping in Mustache templates
+
+  For more information see [MDL-87066](https://tracker.moodle.org/browse/MDL-87066)
+
+#### Changed
+
+- The Hook Manager now uses localcache instead of caching via MUC.
+
+  For more information see [MDL-87107](https://tracker.moodle.org/browse/MDL-87107)
+
+#### Fixed
+
+- `restore_qtype_plugin::unset_excluded_fields` now returns the modified questiondata structure,
+  in order to support structures that contain arrays.
+  If your qtype plugin overrides `restore_qtype_plugin::remove_excluded_question_data` without
+  calling the parent method, you may need to modify your overridden method to use the returned
+  value.
+
+  For more information see [MDL-85975](https://tracker.moodle.org/browse/MDL-85975)
+- When responding to pcntl signals, call existing signal handlers.
+
+  For more information see [MDL-87079](https://tracker.moodle.org/browse/MDL-87079)
+
+### core_completion
+
+#### Changed
+
+- The `completion_info::clear_criteria` method takes an optional `$removetypecriteria` to determine whether to remove course type criteria from other courses that refer to the current course
+
+  For more information see [MDL-86332](https://tracker.moodle.org/browse/MDL-86332)
+
+### core_course
+
+#### Added
+
+- The external function `core_course_get_course_contents` now includes the `candisplay` property for each returned module. If this is false, the module should not be displayed on the course page (for example, for question banks).
+
+  For more information see [MDL-85405](https://tracker.moodle.org/browse/MDL-85405)
 
 ### core_group
 
@@ -15,6 +174,14 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 - `groups_print_activity_menu()` and `groups_get_activity_group()` now include an additional `$participationonly` parameter, which is true by default. This can be set false when we want the user to be able to select a non-participation group within an activity, for example if a teacher wants to filter assignment submissions by non-participation groups. It should never be used when the menu is displayed to students, as this may allow them to participate using non-participation groups. Non-participation groups are labeled as such.
 
   For more information see [MDL-81514](https://tracker.moodle.org/browse/MDL-81514)
+
+### mod_glossary
+
+#### Added
+
+- Function mod_glossary_rating_can_see_item_ratings is now implemented for checking permissions to view ratings.
+
+  For more information see [MDL-86960](https://tracker.moodle.org/browse/MDL-86960)
 
 ## 5.0.3
 

@@ -791,7 +791,7 @@ function file_get_drafarea_files($draftitemid, $filepath = '/') {
             }
             // find the file this draft file was created from and count all references in local
             // system pointing to that file
-            $source = @unserialize($file->get_source() ?? '');
+            $source = unserialize_object($file->get_source() ?? '');
             if (isset($source->original)) {
                 $item->refcount = $fs->search_references_count($source->original);
             }
@@ -911,9 +911,9 @@ function file_get_submitted_draft_itemid($elname) {
  * @return stored_file
  */
 function file_restore_source_field_from_draft_file($storedfile) {
-    $source = @unserialize($storedfile->get_source() ?? '');
-    if (!empty($source)) {
-        if (is_object($source)) {
+    if (!empty($storedfile->get_source())) {
+        $source = unserialize_object($storedfile->get_source());
+        if (isset($source->source)) {
             $restoredsource = $source->source;
             $storedfile->set_source($restoredsource);
         } else {
@@ -1205,7 +1205,7 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
             // Let's check if we can update this file or we need to delete and create.
             if ($newfile->is_directory()) {
                 // Directories are always ok to just update.
-            } else if (($source = @unserialize($newfile->get_source() ?? '')) && isset($source->original)) {
+            } else if (($source = unserialize_object($newfile->get_source() ?? '')) && isset($source->original)) {
                 // File has the 'original' - we need to update the file (it may even have not been changed at all).
                 $original = file_storage::unpack_reference($source->original);
                 if ($original['filename'] !== $oldfile->get_filename() || $original['filepath'] !== $oldfile->get_filepath()) {
@@ -1241,8 +1241,10 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
             // Field files.source for draftarea files contains serialised object with source and original information.
             // We only store the source part of it for non-draft file area.
             $newsource = $newfile->get_source();
-            if ($source = @unserialize($newfile->get_source() ?? '')) {
-                $newsource = $source->source;
+            if ($source = unserialize_object($newfile->get_source() ?? '')) {
+                if (isset($source->source)) {
+                    $newsource = $source->source;
+                }
             }
             if ($oldfile->get_source() !== $newsource) {
                 $oldfile->set_source($newsource);
@@ -1275,10 +1277,12 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
         // the size and subdirectory tests are extra safety only, the UI should prevent it
         foreach ($newhashes as $file) {
             $file_record = array('contextid'=>$contextid, 'component'=>$component, 'filearea'=>$filearea, 'itemid'=>$itemid, 'timemodified'=>time());
-            if ($source = @unserialize($file->get_source() ?? '')) {
+            if ($source = unserialize_object($file->get_source() ?? '')) {
                 // Field files.source for draftarea files contains serialised object with source and original information.
                 // We only store the source part of it for non-draft file area.
-                $file_record['source'] = $source->source;
+                if (isset($source->source)) {
+                    $file_record['source'] = $source->source;
+                }
             }
 
             if ($file->is_external_file()) {
@@ -2941,7 +2945,7 @@ function file_overwrite_existing_draftfile(stored_file $newfile, stored_file $ex
 
     $fs = get_file_storage();
     // Remember original file source field.
-    $source = @unserialize($existingfile->get_source() ?? '');
+    $source = unserialize_object($existingfile->get_source() ?? '');
     // Remember the original sortorder.
     $sortorder = $existingfile->get_sortorder();
     if ($newfile->is_external_file()) {
@@ -2965,7 +2969,7 @@ function file_overwrite_existing_draftfile(stored_file $newfile, stored_file $ex
     $newfile = $fs->create_file_from_storedfile($newfilerecord, $newfile);
     // Preserve original file location (stored in source field) for handling references.
     if (isset($source->original)) {
-        if (!($newfilesource = @unserialize($newfile->get_source() ?? ''))) {
+        if (!($newfilesource = unserialize_object($newfile->get_source() ?? ''))) {
             $newfilesource = new stdClass();
         }
         $newfilesource->original = $source->original;
@@ -3379,6 +3383,33 @@ class curl {
     }
 
     /**
+     * Remove options previously set with setopt.
+     *
+     * @param array $options List of options to remove.
+     */
+    public function removeopt(
+        array $options = [],
+    ): void {
+        foreach ($options as $name) {
+            if (!is_string($name)) {
+                throw new coding_exception('Curl options should be defined using strings, not constant values.');
+            }
+            if (!str_contains(strtoupper($name), 'CURLOPT_')) {
+                // Only prefix with CURLOPT_ if the option doesn't contain CURLINFO_,
+                // which is a valid prefix for at least one option CURLINFO_HEADER_OUT.
+                if (!str_contains(strtoupper($name), 'CURLINFO_')) {
+                    $name = strtoupper('CURLOPT_' . $name);
+                }
+            } else {
+                $name = strtoupper($name);
+            }
+            if (isset($this->options[$name])) {
+                unset($this->options[$name]);
+            }
+        }
+    }
+
+    /**
      * Reset http method
      */
     public function cleanopt() {
@@ -3680,6 +3711,10 @@ class curl {
                 $options[$n] = $v;
             }
             $handles[$i] = curl_init($requests[$i]['url']);
+
+            // Set the URL as a curl option.
+            $this->setopt(['CURLOPT_URL' => $requests[$i]['url']]);
+
             $this->apply_opt($handles[$i], $options);
             curl_multi_add_handle($main, $handles[$i]);
         }
@@ -3750,6 +3785,15 @@ class curl {
             return null;
         }
 
+        // Check if the URL is blocked in core curl_security_helper or
+        // curl security helper that passed to curl class constructor.
+        // Note, we purposely check the configured helper first,
+        // as this may be being mocked for unit testing.
+        if ($this->securityhelper->url_is_blocked($url)) {
+            $this->error = $this->securityhelper->get_blocked_url_string();
+            return $this->error;
+        }
+
         // Augment all installed plugin's security helpers if there is any.
         // The plugin's function has to be defined as plugintype_pluginname_curl_security_helper in pluginname/lib.php.
         $plugintypes = get_plugins_with_function('curl_security_helper');
@@ -3766,13 +3810,6 @@ class curl {
                     }
                 }
             }
-        }
-
-        // Check if the URL is blocked in core curl_security_helper or
-        // curl security helper that passed to curl class constructor.
-        if ($this->securityhelper->url_is_blocked($url)) {
-            $this->error = $this->securityhelper->get_blocked_url_string();
-            return $this->error;
         }
 
         // Set allowed resolve info if the URL is not blocked.
@@ -4168,7 +4205,7 @@ class curl {
      * @param array $options
      * @return ?string
      */
-    public function put($url, $params = array(), $options = array()) {
+    public function put($url, $params = [], $options = []) {
         $file = '';
         $fp = false;
         if (isset($params['file'])) {
@@ -4182,8 +4219,12 @@ class curl {
             } else {
                 return null;
             }
-            if (!isset($this->options['CURLOPT_USERPWD'])) {
+            if (!isset($options['CURLOPT_USERPWD']) && !isset($this->options['CURLOPT_USERPWD'])) {
                 $this->setopt(array('CURLOPT_USERPWD' => 'anonymous: noreply@moodle.org'));
+            }
+            if (isset($options['CURLOPT_USERPWD']) && $options['CURLOPT_USERPWD'] === false) {
+                $this->removeopt(['CURLOPT_USERPWD']);
+                unset($options['CURLOPT_USERPWD']);
             }
         } else {
             $options['CURLOPT_CUSTOMREQUEST'] = 'PUT';
@@ -4369,7 +4410,7 @@ class curl_cache {
                 $fp = fopen($this->dir.$filename, 'r');
                 $size = filesize($this->dir.$filename);
                 $content = fread($fp, $size);
-                return unserialize($content);
+                return unserialize_array($content);
             }
         }
         return false;

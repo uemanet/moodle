@@ -35,8 +35,8 @@ $string['asyncgeneralsettings'] = 'Asynchronous backup/restore';
 $string['asyncemailenable'] = 'Enable notifications';
 $string['asyncemailenabledetail'] = 'If enabled, users will receive a notification when an asynchronous backup or restore completes.';
 $string['asyncmessagebody'] = 'Notification';
+$string['asyncmessagebodydefault'] = '{operation} (ID: {backupid}) completed. Access it here: <a href="{link}">{link}</a>.';
 $string['asyncmessagebodydetail'] = 'Notification to send when an asynchronous backup or restore completes.';
-$string['asyncmessagebodydefault'] = 'Your {operation} (ID: {backupid}) has completed successfully. You can access it here: <a href="{link}">{link}</a>.';
 $string['asyncmessagesubject'] = 'Subject';
 $string['asyncmessagesubjectdetail'] = 'Notification subject';
 $string['asyncmessagesubjectdefault'] = 'Moodle {operation} completed successfully';
@@ -55,7 +55,7 @@ $string['asyncrestoreinprogress_help'] = 'Asynchronous course restores that are 
 $string['autoactivedisabled'] = 'Disabled';
 $string['autoactiveenabled'] = 'Enabled';
 $string['autoactivemanual'] = 'Manual';
-$string['autoactivedescription'] = 'Choose whether or not to do automated backups. If manual is selected automated backups will be possible only by through the automated backups CLI script. This can be done either manually on the command line or through cron.';
+$string['autoactivedescription'] = 'Automated backups may be run automatically or manually, using a Command Line Interface (CLI) script.';
 $string['automatedbackupschedule'] = 'Schedule';
 $string['automatedbackupschedulehelp'] = 'Choose which days of the week to perform automated backups.';
 $string['automatedbackupsinactive'] = 'Automated backups haven\'t been enabled by the site admin';

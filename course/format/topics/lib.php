@@ -107,24 +107,11 @@ class format_topics extends core_courseformat\base {
      * @param array $options options for view URL. At the moment core uses:
      *     'navigation' (bool) if true and section not empty, the function returns section page; otherwise, it returns course page.
      *     'sr' (int) used by course formats to specify to which section to return
-     * @return null|moodle_url
+     * @return moodle_url
      */
     public function get_view_url($section, $options = []) {
-        $course = $this->get_course();
-        if (array_key_exists('sr', $options) && !is_null($options['sr'])) {
-            $sectionno = $options['sr'];
-        } else if (is_object($section)) {
-            $sectionno = $section->section;
-        } else {
-            $sectionno = $section;
-        }
-        if ((!empty($options['navigation']) || array_key_exists('sr', $options)) && $sectionno !== null) {
-            // Display section on separate page.
-            $sectioninfo = $this->get_section($sectionno);
-            return new moodle_url('/course/section.php', ['id' => $sectioninfo->id]);
-        }
-
-        return new moodle_url('/course/view.php', ['id' => $course->id]);
+        $options['expanded'] = false;
+        return parent::get_view_url($section, $options);
     }
 
     /**

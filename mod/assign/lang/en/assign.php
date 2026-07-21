@@ -79,6 +79,11 @@ $string['assignmentduesoonhtml'] = '<p>Hi {$a->firstname},</p>
 <p>The assignment <strong>{$a->assignmentname}</strong> in course {$a->coursename} is due soon.</p>
 <p><strong>Due: {$a->duedate}</strong></p>
 <p><a href="{$a->url}">Go to activity</a></p>';
+$string['assignmentduesoonofflinehtml'] = '<p>Hi {$a->firstname},</p>
+<p>The assignment <strong>{$a->assignmentname}</strong> in course {$a->coursename} is due soon.</p>
+<p>If you have already submitted your work, no further action is required.</p>
+<p><strong>Due: {$a->duedate}</strong></p>
+<p><a href="{$a->url}">Go to activity</a></p>';
 $string['assignmentduesoonsms'] = 'Your assignment {$a->assignmentname} is due on {$a->duedate}: {$a->url}';
 $string['assignmentoverduehtml'] = '<p>Hi {$a->firstname},</p>
 <p><strong>{$a->assignmentname}</strong> in course {$a->coursename} was due on <strong>{$a->duedate}</strong>.</p>
@@ -345,7 +350,7 @@ $string['gradingstatus'] = 'Grading status';
 $string['gradingstudent'] = 'Grading student';
 $string['gradingsummary'] = 'Grading summary';
 $string['groupoverrides'] = 'Group overrides';
-$string['groupsnone'] = 'No groups you can access.';
+$string['groupsnone'] = 'There are no groups in this course.';
 $string['hidegrader'] = 'Hide grader identity from students';
 $string['hidegrader_help'] = 'If enabled, the identity of any user who grades an assignment submission is not shown, so students can\'t see who marked their work.
 
@@ -692,8 +697,8 @@ $string['userextensiondate'] = 'Extension granted until: {$a}';
 $string['userassignmentdefaults'] = 'User assignment defaults';
 $string['useridlistnotcached'] = 'The grade changes were NOT saved, as it was not possible to determine which submission they were for.';
 $string['useroverrides'] = 'User overrides';
+$string['usersnone'] = 'There are no users enrolled in this course or no users can access the assignment.';
 $string['usersubmissioncannotberemoved'] = 'The submission of {$a} cannot be removed.';
-$string['usersnone'] = 'No students have access to this assignment.';
 $string['userswhoneedtosubmit'] = 'Users who need to submit: {$a}';
 $string['usergrade'] = 'User grade';
 $string['validmarkingworkflowstates'] = 'Valid marking workflow states';

@@ -21,15 +21,17 @@ Feature: The description and picture of a group can be viewed by students and te
 
   @javascript @_file_upload
   Scenario: A student can see the group description and picture when visible groups are set. Teachers can see group details.
-    Given I am on the "Course 1" "course editing" page logged in as "teacher1"
+    Given the "multilang" filter is "on"
+    And the "multilang" filter applies to "content and headings"
+    And I am on the "Course 1" "course editing" page logged in as "teacher1"
     And I set the following fields to these values:
       | Group mode | Visible groups |
     And I press "Save and display"
     And I am on the "Course 1" "groups" page
     And I press "Create group"
     And I set the following fields to these values:
-      | Group name | Group A |
-      | Group description | Description for Group A |
+      | Group name        | <span lang="en" class="multilang">Group A & < > " '</span><span lang="de" class="multilang">Gruppe A</span> |
+      | Group description | Description for Group A                                                                           |
     # Upload group picture
     And I upload "lib/tests/fixtures/gd-logo.png" file to "New picture" filemanager
     And I press "Save changes"
@@ -39,7 +41,7 @@ Feature: The description and picture of a group can be viewed by students and te
     And I press "Save changes"
     And I add "Student 1 (student1@example.com)" user to "Group A" group members
     And I add "Student 2 (student2@example.com)" user to "Group B" group members
-    And I navigate to course participants
+    And I am on the "Course 1" "enrolled users" page
     And I click on "Student 1" "link" in the "participants" "table"
     And I click on "Group A" "link"
     And I should see "Description for Group A"
@@ -53,19 +55,25 @@ Feature: The description and picture of a group can be viewed by students and te
     And I click on "Group B" "link"
     And I should see "Student 2" in the "participants" "table"
     And ".groupinfobox" "css_element" should not exist
-    When I am on the "Course 1" course page logged in as student1
-    And I navigate to course participants
+    When I am on the "Course 1" "enrolled users" page logged in as student1
     And I click on "Student 1" "link" in the "participants" "table"
     And I click on "Group A" "link"
     # As student, confirm that group description and picture is displayed
-    Then I should see "Description for Group A"
+    And I should see "Description for Group A"
     And "//img[@class='grouppicture']" "xpath_element" should exist
-    And I am on the "Course 1" course page logged in as student2
-    And I navigate to course participants
+    And I am on the "Course 1" "enrolled users" page logged in as student2
     And I click on "Student 2" "link" in the "participants" "table"
     And I click on "Group B" "link"
     And I should see "Student 2" in the "participants" "table"
     And ".groupinfobox" "css_element" should not exist
+    # As teacher, confirm that the group picture in the edit form has the correct alt text
+    And I am on the "Course 1" "groups" page logged in as teacher1
+    And I set the field "groups" to "Group A"
+    And I press "Edit group settings"
+    Then the "alt" attribute of "//*[contains(@data-name, 'currentpicture')]//img" "xpath_element" should contain "Group A & <"
+    But the "alt" attribute of "//*[contains(@data-name, 'currentpicture')]//img" "xpath_element" should not contain "span"
+    And the "title" attribute of "//*[contains(@data-name, 'currentpicture')]//img" "xpath_element" should contain "Group A & <"
+    But the "title" attribute of "//*[contains(@data-name, 'currentpicture')]//img" "xpath_element" should not contain "span"
 
   @javascript @_file_upload
   Scenario: A student can not see the group description and picture when separate groups are set. Teachers can see group details.
@@ -87,7 +95,7 @@ Feature: The description and picture of a group can be viewed by students and te
     And I press "Save changes"
     And I add "Student 1 (student1@example.com)" user to "Group A" group members
     And I add "Student 2 (student2@example.com)" user to "Group B" group members
-    And I navigate to course participants
+    And I am on the "Course 1" "enrolled users" page
     And I click on "Student 1" "link" in the "participants" "table"
     And I click on "Group A" "link"
     And I should see "Description for Group A"
@@ -100,8 +108,7 @@ Feature: The description and picture of a group can be viewed by students and te
     And I click on "Student 2" "link" in the "participants" "table"
     And I click on "Group B" "link"
     And ".groupinfobox" "css_element" should not exist
-    When I am on the "Course 1" course page logged in as student1
-    And I navigate to course participants
+    When I am on the "Course 1" "enrolled users" page logged in as student1
     And I click on "Student 1" "link" in the "participants" "table"
     And I click on "Group A" "link"
     And I should see "Student 1" in the "participants" "table"
@@ -109,8 +116,7 @@ Feature: The description and picture of a group can be viewed by students and te
     Then I should not see "Description for Group A"
     And "//img[@class='grouppicture']" "xpath_element" should not exist
     And ".groupinfobox" "css_element" should not exist
-    When I am on the "Course 1" course page logged in as student2
-    And I navigate to course participants
+    And I am on the "Course 1" "enrolled users" page logged in as student2
     And I click on "Student 2" "link" in the "participants" "table"
     And I click on "Group B" "link"
     And I should see "Student 2" in the "participants" "table"

@@ -424,6 +424,17 @@ final class moodlelib_test extends \advanced_testcase {
      * @covers \core\param
      * @covers \clean_param
      */
+    public function test_clean_param_bool(): void {
+        $this->assertSame(0, clean_param(false, PARAM_BOOL));
+        $this->assertSame(0, clean_param(0, PARAM_BOOL));
+        $this->assertSame(1, clean_param(true, PARAM_BOOL));
+        $this->assertSame(1, clean_param(1, PARAM_BOOL));
+    }
+
+    /**
+     * @covers \core\param
+     * @covers \clean_param
+     */
     public function test_clean_param_sequence(): void {
         $this->assertSame(',9789,42897', clean_param('#()*#,9789\'".,<42897></?$(*DSFMO#$*)(SDJ)($*)', PARAM_SEQUENCE));
         $this->assertSame('', clean_param(null, PARAM_SEQUENCE));
@@ -946,6 +957,12 @@ final class moodlelib_test extends \advanced_testcase {
         validate_param('1e10', PARAM_FLOAT);
         validate_param('.1e+10', PARAM_FLOAT);
         validate_param('1E-1', PARAM_FLOAT);
+
+        // Make sure bools do not cause exceptions.
+        validate_param(false, PARAM_BOOL);
+        validate_param(0, PARAM_BOOL);
+        validate_param(true, PARAM_BOOL);
+        validate_param(1, PARAM_BOOL);
 
         try {
             $param = validate_param('1,2', PARAM_FLOAT);
@@ -3572,6 +3589,53 @@ EOF;
     }
 
     /**
+     * Test sending calendar (ICS) file attachments with email_to_user
+     *
+     * @covers ::email_to_user
+     */
+    public function test_email_to_user_calendar_attachment(): void {
+        global $CFG;
+
+        // Create a test calendar file in temp directory.
+        $temp = make_request_directory();
+        $filepath = $temp . '/test_calendar.ics';
+        $icalcontent = "BEGIN:VCALENDAR\r\n" .
+                       "VERSION:2.0\r\n" .
+                       "METHOD:REQUEST\r\n" .
+                       "BEGIN:VEVENT\r\n" .
+                       "SUMMARY:Test Event\r\n" .
+                       "DTSTART:20250704T140000\r\n" .
+                       "DTEND:20250704T150000\r\n" .
+                       "END:VEVENT\r\n" .
+                       "END:VCALENDAR";
+        file_put_contents($filepath, $icalcontent);
+
+        $user = \core_user::get_support_user();
+        $message = 'Test calendar attachment';
+
+        // Create sink to catch all sent e-mails.
+        $sink = $this->redirectEmails();
+
+        $filename = basename($filepath);
+        email_to_user($user, $user, $message, $message, $message, $filepath, $filename);
+
+        $messages = $sink->get_messages();
+        $sink->close();
+
+        $this->assertCount(1, $messages);
+
+        // Verify calendar content in message body.
+        $messagebody = reset($messages)->body;
+        // Check that it's not attached as a regular attachment.
+        $this->assertStringNotContainsString(
+            'Content-Disposition: attachment; filename=' . $filename,
+            $messagebody
+        );
+        // Check that it's included as iCal content.
+        $this->assertStringContainsString('Content-Type: text/calendar; method=REQUEST', $messagebody);
+    }
+
+    /**
      * Test setnew_password_and_mail.
      */
     public function test_setnew_password_and_mail(): void {
@@ -3850,7 +3914,7 @@ EOF;
      * @dataProvider count_words_testcases
      * @param int $expectedcount number of words in $string.
      * @param string $string the test string to count the words of.
-     * @param int|null $format
+     * @param int|null $format FORMAT_... constant to pass to count_words.
      */
     public function test_count_words(int $expectedcount, string $string, $format = null): void {
         $this->assertEquals($expectedcount, count_words($string, $format),
@@ -3910,8 +3974,12 @@ EOT;
             [1, '<span>a</span><span>b</span>', FORMAT_HTML],
             [1, '<span>a</span><span>b</span>', FORMAT_MOODLE],
             [1, '<span>a</span><span>b</span>', FORMAT_MARKDOWN],
-            [1, 'aa <argh <bleh>pokus</bleh>'],
+            [3, 'aa <argh <bleh>pokus</bleh>'],
             [2, 'aa <argh <bleh>pokus</bleh>', FORMAT_HTML],
+            [3, 'x < 1', FORMAT_PLAIN],
+            [3, 'quam justo<lectus commodo', FORMAT_PLAIN],
+            [5, 'lorem ipsum< dolor sit amet', FORMAT_PLAIN],
+            [4, 'word starting <less than', FORMAT_PLAIN],
             [6, $copypasted],
             [6, $copypasted, FORMAT_PLAIN],
             [3, $copypasted, FORMAT_HTML],
@@ -5804,5 +5872,23 @@ EOT;
         $this->assertArrayNotHasKey('fake', $plugins);
         $pluginlist = get_plugin_list_with_function('fake', 'test_callback');
         $this->assertArrayNotHasKey('fake_fullfeatured', $pluginlist);
+    }
+
+    /**
+     * Test MessageID is reset when sending messages in bulk.
+     *
+     * Ensures that each outgoing mail is assigned a unique MessageID.
+     *
+     * @covers ::get_mailer
+     */
+    public function test_message_id_reset_in_smtp_bulk_mode(): void {
+        $this->resetAfterTest();
+        set_config('smtphosts', 'anyhost');
+        set_config('smtpmaxbulk', 5);
+
+        $mailer = get_mailer();
+        $this->assertEmpty($mailer->MessageID);
+        $mailer->MessageID = "this should be reset next";
+        $this->assertEmpty(get_mailer()->MessageID);
     }
 }

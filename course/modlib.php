@@ -543,7 +543,7 @@ function can_add_moduleinfo($course, $modulename, $sectionnum) {
     }
 
     if (!course_allowed_module($course, $module->name)) {
-        throw new \moodle_exception('moduledisable');
+        throw new \moodle_exception('moduledisable', 'error', '', $module->name);
     }
 
     return [$module, $context, $sectioninfo];
@@ -625,7 +625,7 @@ function update_moduleinfo($cm, $moduleinfo, $course, $mform = null) {
         if (!empty($moduleinfo->completionunlocked)) {
             $cm->completion = $moduleinfo->completion;
             $cm->completionpassgrade = $moduleinfo->completionpassgrade ?? 0;
-            if ($moduleinfo->completiongradeitemnumber === '') {
+            if (empty($moduleinfo->completionusegrade)) {
                 $cm->completiongradeitemnumber = null;
             } else {
                 $cm->completiongradeitemnumber = $moduleinfo->completiongradeitemnumber;

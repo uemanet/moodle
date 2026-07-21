@@ -1,5 +1,22 @@
 # core_question (subsystem) Upgrade notes
 
+## 5.0.7
+
+### Added
+
+- During restore of a question_set_reference, mapping of IDs in the filtercondition is now delegated to qbank plugins. If your qbank plugin defines a filter condition that uses database IDs, add an override of `restore_filtercondition()` to the `condition` class, which checks the condition's data and replaces the IDs with mapped values if required. See  `qbank_managecategories\category_condition` for an example.
+
+  For more information see [MDL-86524](https://tracker.moodle.org/browse/MDL-86524)
+
+## 5.0.5
+
+### Fixed
+
+- In order to prevent re-use of question version numbers after a version is deleted, the `nextversion` column was added to `question_bank_entries`. This serves as a counter incremented each time a version is created.
+  Do not query this field directly. Instead use `core_question\versions::get_next_version()` to read the value, which will initialise it based on the existing versions if it is not set yet. By default, it will increment the version number automatically, unless you pass `increment: false`. Because of this, it is advisable to call it inside a transaction, that is only committed after the version number is used in a `question_versions` record.
+
+  For more information see [MDL-86798](https://tracker.moodle.org/browse/MDL-86798)
+
 ## 5.0.2
 
 ### Added

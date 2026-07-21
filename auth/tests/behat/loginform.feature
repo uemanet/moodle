@@ -34,11 +34,13 @@ Feature: Test if the login form provides the correct feedback
   Scenario: Set logo for loginpage
     Given I log in as "admin"
     And I navigate to "Appearance > Logos" in site administration
-    And I upload "course/tests/fixtures/image.jpg" file to "Logo" filemanager
+    And I upload "lib/tests/fixtures/1.jpg" file to "Logo" filemanager
+    And I upload "lib/tests/fixtures/2.jpg" file to "Favicon" filemanager
     And I press "Save changes"
     And I log out
     And I follow "Log in"
-    Then "//img[@id='logoimage']" "xpath_element" should exist
+    Then "//img[@id='logoimage' and contains(@src, '/1.jpg')]" "xpath_element" should exist
+    And "//link[@rel='shortcut icon' and contains(@href, '/2.jpg')]" "xpath_element" should exist
 
   Scenario: Add a custom welcome message
     Given the following config values are set as admin:
@@ -96,13 +98,15 @@ Feature: Test if the login form provides the correct feedback
     And I follow "Log in"
     Then the focused element is "Password" "field"
 
+  @accessibility
   Scenario: Test the login page focus after error feature
     Given I follow "Log in"
     And I set the field "Username" to "admin"
     And I set the field "Password" to "wrongpassword"
     And I press "Log in"
-    And I press the tab key
+    And I wait until the page is ready
     Then the focused element is "Username" "field"
+    And the page should meet accessibility standards with "best-practice" extra tests
 
   Scenario: Display the password visibility toggle icon
     Given the following config values are set as admin:

@@ -615,6 +615,10 @@ enum param: string {
             } else if (!is_numeric($param) || !preg_match('/^[\+-]?[0-9]*\.?[0-9]*(e[-+]?[0-9]+)?$/i', (string)$param)) {
                 throw new invalid_parameter_exception($debuginfo);
             }
+        } else if ($this->canonical() === self::BOOL) {
+            if ($param != $cleaned) {
+                throw new invalid_parameter_exception($debuginfo);
+            }
         } else if ((string) $param !== (string) $cleaned) {
             // Conversion to string is usually lossless.
             throw new invalid_parameter_exception($debuginfo);
@@ -1067,8 +1071,10 @@ enum param: string {
                 // Absolute, and matches our wwwroot.
             } else {
                 // Relative - let's make sure there are no tricks.
-                if (validateUrlSyntax('/' . $param, 's-u-P-a-p-f+q?r?') &&
-                        !preg_match('/javascript(?:.*\/{2,})?:/i', rawurldecode($param))) {
+                if (
+                    validateUrlSyntax('/' . $param, 's-u-P-a-p-f+q?r?') &&
+                    !preg_match('/\bjavascript\b[\s\S]*?(?:\:|\/)/i', rawurldecode($param))
+                ) {
                     // Valid relative local URL.
                 } else {
                     $param = '';
